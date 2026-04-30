@@ -1,11 +1,3 @@
-## Script relationship
+This module identifies candidate thionin homologs in barley reference line Morex using a BLASTP-based homology search.
 
-The BLASTP workflow is orchestrated by:
-
-run_thionin_pipeline.bat
-
-This script internally calls:
-
-filter_blastp_hits.py
-
-The Python script performs downstream filtering and sequence extraction.
+A combined thionin query dataset (including sequences from Arabidopsis, rice, and other plant species) is used to search the barley proteome. BLASTP hits are filtered based on E-value, redundant hits are removed, and corresponding protein sequences are extracted.
