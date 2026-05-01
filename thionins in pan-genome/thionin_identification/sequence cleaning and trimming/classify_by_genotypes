@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Script: classify_fasta_by_genotypes.py
+
+Description:
+    Split sequences from multiple FASTA files by cultivar/accession name.
+
+    The cultivar name is extracted from the sequence ID using a fixed
+    dot-separated field. By default, the second field is used.
+
+    Example sequence ID:
+        HORVU.HOR_3365.PROJ.6HG00473840.1
+
+    Dot-separated fields:
+        [0] HORVU
+        [1] HOR_3365   <- cultivar/accession name
+        [2] PROJ
+        [3] 6HG00473840
+        [4] 1
+
+Input:
+    - Directory containing FASTA files
+
+Output:
+    - One FASTA file per cultivar/accession
+
+Usage:
+    python split_fasta_by_cultivar.py \
+        --input_dir input_fasta \
+        --output_dir output_by_cultivar
+
+Example:
+    python split_fasta_by_cultivar.py \
+        --input_dir trimmed_sequences \
+        --output_dir cultivar_sequences
+"""
+
+import argparse
+import os
+from pathlib import Path
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Split FASTA sequences by cultivar/accession name."
+    )
+
+    parser.add_argument(
+        "--input_dir",
+        required=True,
+        help="Directory containing input FASTA files."
+    )
+
+    parser.add_argument(
+        "--output_dir",
+        required=True,
+        help="Directory to save cultivar-specific FASTA files."
+    )
+
+    parser.add_argument(
+        "--cultivar_field",
+        type=int,
+        default=1,
+        help=(
+            "Zero-based field index used to extract cultivar name from "
+            "dot-separated sequence ID. Default: 1"
+        )
+    )
+
+    return parser.parse_args()
+
+
+def read_fasta_file(file_path):
+    """
+    Read a FASTA file and return a list of (sequence_id, sequence) tuples.
+
+    This preserves the original function of the source script by using
+    a simple FASTA parser.
+    """
+    sequences = []
+
+    with open(file_path, "r") as f:
+        seq_id = ""
+        seq = ""
+
+        for line in f:
+            line = line.strip()
+
+            if not line:
+                continue
+
+            if line.startswith(">"):
+                if seq_id and seq:
+                    sequences.append((seq_id, seq))
+
+                seq_id = line[1:]
+                seq = ""
+            else:
+                seq += line
+
+        if seq_id and seq:
+            sequences.append((seq_id, seq))
+
+    return sequences
+
+
+def extract_cultivar(seq_id, field_index):
+    """
+    Extract cultivar/accession name from sequence ID.
+    """
+    parts = seq_id.split(".")
+
+    if len(parts) <= field_index:
+        return "Unknown"
+
+    return parts[field_index]
+
+
+def main():
+    args = parse_args()
+
+    input_dir = Path(args.input_dir)
+    output_dir = Path(args.output_dir)
+
+    if not input_dir.exists():
+        raise FileNotFoundError(f"Input directory not found: {input_dir}")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    cultivar_dict = {}
+
+    fasta_files = [
+        file for file in input_dir.iterdir()
+        if file.suffix.lower() in [".fa", ".fasta"]
+    ]
+
+    if not fasta_files:
+        raise ValueError(f"No FASTA files found in: {input_dir}")
+
+    for fasta_file in fasta_files:
+        sequences = read_fasta_file(fasta_file)
+
+        for seq_id, seq in sequences:
+            cultivar = extract_cultivar(
+                seq_id=seq_id,
+                field_index=args.cultivar_field
+            )
+
+            cultivar_dict.setdefault(cultivar, []).append((seq_id, seq))
+
+    for cultivar, seq_list in cultivar_dict.items():
+        out_file = output_dir / f"{cultivar}.fasta"
+
+        with open(out_file, "w") as out:
+            for seq_id, seq in seq_list:
+                out.write(f">{seq_id}\n")
+                out.write(f"{seq}\n")
+
+    print(f"Sequences were grouped by cultivar and written to: {output_dir}")
+    print(f"Total cultivars/accessions: {len(cultivar_dict)}")
+
+
+if __name__ == "__main__":
+    main()
