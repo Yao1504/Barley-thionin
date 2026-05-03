@@ -1,27 +1,38 @@
-# CDS Identity Clustering and Distance Analysis Pipeline
+# CDS Identity Clustering, Distance Analysis, and Visualization Pipeline
 
 ## Overview
 
-This module performs CDS-level identity analysis, clustering, copy number variation (CNV) quantification, and evolutionary distance calculation for candidate thionin genes across multiple barley genotypes.
+This module provides an integrated workflow for:
 
-The workflow consists of two main steps:
+* CDS identity analysis
+* Sequence clustering and CNV quantification
+* Evolutionary distance calculation
+* Network and phylogenetic visualization
 
-1. Identity-based clustering and CNV analysis  
-2. Cluster-level evolutionary distance calculation  
+The pipeline is designed for systematic analysis of **thionin gene family variation across multiple barley genotypes**.
+
+The workflow consists of three main components:
+
+1. Identity-based clustering and CNV analysis
+2. Cluster-level evolutionary distance calculation
+3. Visualization of cluster relationships and phylogenetic structure
 
 ---
 
 ## Pipeline Workflow
 
-CDS sequences (20 genotypes)  
-↓  
-run_cds_identity_cluster_pipeline.py  
-↓  
-Identity matrix + clusters + subclusters  
-↓  
-calculate_cluster_distance.py  
-↓  
-Cluster distance matrix  
+CDS sequences (multiple genotypes)
+↓
+run_cds_identity_cluster_pipeline.py
+↓
+Identity matrix + clusters + subclusters
+↓
+calculate_cluster_distance.py
+↓
+Cluster distance matrix + analysis results
+↓
+├── plot_cluster_network.py
+└── plot_tree_identity_heatmap.py
 
 ---
 
@@ -33,12 +44,12 @@ run_cds_identity_cluster_pipeline.py
 
 ### Description
 
-Coding sequences (CDSs) of candidate thionin genes from 20 barley genotypes are processed as follows:
+Coding sequences (CDSs) of candidate thionin genes are processed through the following steps:
 
-1. Translated into protein sequences  
-2. Aligned using MAFFT v7  
-3. Converted into codon alignment using PAL2NAL  
-4. Pairwise nucleotide identity matrix is calculated  
+1. Translation of CDS into protein sequences
+2. Multiple sequence alignment using MAFFT v7
+3. Codon alignment using PAL2NAL
+4. Calculation of pairwise nucleotide identity matrix
 
 ---
 
@@ -46,7 +57,7 @@ Coding sequences (CDSs) of candidate thionin genes from 20 barley genotypes are 
 
 Sequences with identity ≥ 90% are assigned to the same cluster.
 
-Sequences that do not meet this threshold are defined as singletons.
+Sequences that do not meet this threshold with any other sequence are defined as **singletons**.
 
 ---
 
@@ -54,25 +65,30 @@ Sequences that do not meet this threshold are defined as singletons.
 
 For each genotype:
 
-Number of sequences per cluster = gene copy number
-
-This is used to assess copy number variation (CNV).
+* The number of sequences assigned to each cluster is counted
+* This provides a quantitative measure of **copy number variation (CNV)**
 
 ---
 
-### Subcluster Definition
+### Subclustering
 
 Within each genotype:
 
-Sequences with 100% identity are grouped into subclusters.
-
-This reflects:
-- exact duplicates  
-- highly conserved copies  
+* Sequences with **100% identity** are grouped into subclusters
+* The number of subclusters reflects **fine-scale duplication patterns**
 
 ---
 
-## Step 2: Cluster Distance Analysis
+### Output
+
+* identity.xlsx
+* clusters_90/
+* subclusters_90/
+* cluster_subcluster_summary.xlsx
+
+---
+
+## Step 2: Cluster Distance Calculation
 
 ### Script
 
@@ -80,100 +96,172 @@ calculate_cluster_distance.py
 
 ### Description
 
-Cluster-level divergence is quantified using pairwise sequence distances derived from identity.
+Pairwise evolutionary distances are derived from the identity matrix.
 
 ---
 
 ### Distance Definition
 
+Pairwise distance between two sequences:
+
 d(a,b) = 1 − identity(a,b) / 100
 
 ---
 
-### Inter-cluster Distance
+### Cluster Distance
 
 For two clusters Ci and Cj:
 
-D(Ci, Cj) = (1 / (|Ci| × |Cj|)) × Σ d(a,b)
-
-where:
-- a ∈ Ci  
-- b ∈ Cj  
-
-Interpretation:
-
-Average evolutionary distance between two clusters.
+D(Ci, Cj) = mean pairwise distance between all sequences in Ci and Cj
 
 ---
 
-### Cluster–Singleton Distance
+### Special Cases
 
-Mean distance between the singleton sequence and all sequences in the cluster.
+* Cluster vs singleton:
+  mean distance between singleton and all members of the cluster
 
----
-
-### Singleton–Singleton Distance
-
-Directly obtained from the pairwise distance matrix.
+* Singleton vs singleton:
+  directly obtained from pairwise distance matrix
 
 ---
 
-## Output Files
+### Output
 
-### From run_cds_identity_cluster_pipeline.py
-
-- identity.xlsx → Pairwise CDS identity matrix  
-- clusters_90/ → Cluster definition files  
-- singletons.txt → Singleton sequences  
-- cluster_subcluster_summary.xlsx → CNV and subcluster summary  
+* distance.xlsx
+* distance_in_cluster.xlsx
+* analysis_results.pkl
 
 ---
 
-### From calculate_cluster_distance.py
+## Step 3: Cluster Network Visualization
 
-- distance.xlsx → Inter-cluster distance matrix  
-- distance_in_cluster.xlsx → Intra-cluster distance  
-- analysis_results.pkl → Serialized analysis data  
+### Script
+
+plot_cluster_network.py
+
+### Description
+
+Constructs a network representation of cluster relationships.
 
 ---
 
-## Biological Interpretation
+### Network Definition
 
-This pipeline enables:
+Nodes:
 
-1. Gene family classification  
-   → Identification of thionin clusters  
+* clusters (size proportional to number of sequences)
+* singletons
 
-2. Copy number variation (CNV)  
-   → Cluster size reflects gene copy number per genotype  
+Edges:
 
-3. Sequence redundancy  
-   → Subclusters represent identical CDS copies  
+* defined by evolutionary distance threshold
 
-4. Evolutionary divergence  
-   → Cluster distances quantify sequence divergence  
+---
+
+### Visualization Features
+
+* Force-directed layout (NetworkX)
+* Node size scaling
+* Cluster color mapping
+* Evolutionary distance scale bar
+
+---
+
+### Output
+
+* network_final_2panels.png
+* network_final_2panels.tif
+
+---
+
+## Step 4: Phylogenetic Tree and Identity Heatmap
+
+### Script
+
+plot_tree_identity_heatmap.py
+
+### Description
+
+Generates a combined visualization of:
+
+* Phylogenetic tree
+* Sequence identity heatmap
+* Cluster annotation
+
+---
+
+### Key Features
+
+* Identity matrix reordered according to tree topology
+
+* Integrated visualization layout:
+
+  * Tree (left)
+  * Heatmap (center)
+  * Cluster annotation (right)
+
+* Separate panels are also exported
+
+---
+
+### Output
+
+* tree_heatmap_cluster.png
+* tree_only.png
+* heatmap_only.png
+* cluster_only.png
+* cluster_assignment.csv
+* gene_id_order.txt
 
 ---
 
 ## Requirements
 
-### Software
-
-- Python ≥ 3.8  
-- MAFFT v7  
-- PAL2NAL  
-- Perl  
-
 ### Python packages
 
-pip install biopython pandas numpy openpyxl tqdm  
+* biopython
+* pandas
+* numpy
+* matplotlib
+* networkx
+* openpyxl
+
+---
+
+### External tools
+
+* MAFFT v7
+* PAL2NAL
+* Perl
+* IQ-TREE
 
 ---
 
 ## Notes
 
-- Identity is calculated at the CDS level  
-- Distance is defined as p-distance  
-- Clustering threshold (90%) can be adjusted  
-- Sequence IDs must be consistent across datasets  
+* Sequence IDs must be consistent across:
 
+  * FASTA files
+  * identity matrix
+  * phylogenetic tree
+
+* Cluster files must follow naming convention:
+
+cluster_1.txt
+cluster_2.txt
+
+* Identity matrix must be symmetric and complete
+
+---
+
+## Summary
+
+This pipeline enables:
+
+* Identification of thionin gene clusters
+* Quantification of CNV across genotypes
+* Assessment of sequence divergence
+* Visualization of evolutionary relationships
+
+It provides a reproducible framework for integrating **sequence identity, clustering, and phylogenetic analysis** in gene family studies.
