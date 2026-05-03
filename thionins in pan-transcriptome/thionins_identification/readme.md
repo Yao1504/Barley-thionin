@@ -10,27 +10,8 @@ It integrates sequence similarity search, genomic coordinate validation, transcr
 
 ## Pipeline Workflow
 
-Pan-transcriptome assemblies (20 genotypes)
-↓
-run_thionin_pantranscriptome.py
-↓
-Candidate thionin transcripts (BLAST-based)
-↓
-classify_transcripts_by_chr.py
-↓
-Chromosome-based grouping
-↓
-run_mafft_transcript_alignment.py
-↓
-Sequence alignment (MAFFT)
-↓
-remove_duplicate_transcripts.py
-↓
-Non-redundant transcript set
-↓
-translate_transcripts_to_proteins.py
-↓
-Final CDS + protein sequences + pseudogene annotation
+Pan-transcriptome assemblies (20 genotypes)---run_thionin_pantranscriptome.py---Candidate thionin transcripts (BLAST-based)---classify_transcripts_by_chr.py---Chromosome-based grouping---
+run_mafft_transcript_alignment.py---Sequence alignment (MAFFT)---remove_duplicate_transcripts.py---Non-redundant transcript set---translate_transcripts_to_proteins.py---Final CDS + protein sequences + pseudogene annotation
 
 ---
 
